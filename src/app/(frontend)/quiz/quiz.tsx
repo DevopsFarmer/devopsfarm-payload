@@ -24,9 +24,12 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
   )
   const [submitted, setSubmitted] = useState(false)
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0)
-  const [timeLeft, setTimeLeft] = useState<number>(() => {
-    return parseInt(localStorage.getItem('quizTimeLeft') || '3600', 10) // 60 min in seconds
-  })
+  const [timeLeft, setTimeLeft] = useState<number>(3600)
+
+  useEffect(() => {
+    setAnswers(JSON.parse(localStorage.getItem('quizAnswers') || '{}'))
+    setTimeLeft(parseInt(localStorage.getItem('quizTimeLeft') || '3600', 10))
+  }, [])
   const [darkMode, setDarkMode] = useState(false)
 
   useEffect(() => {
