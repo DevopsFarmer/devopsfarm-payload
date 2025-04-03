@@ -148,20 +148,22 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
   };
 
   return (
-    <div className="relative mt-10 p-6 bg-white shadow-lg rounded-lg flex">
+    <div className="relative mt-6 p-4 md:p-6 bg-white shadow-lg rounded-lg flex flex-col md:flex-row">
+      {/* Email Entry Section */}
       {!emailSubmitted ? (
         <div className="w-full text-center">
-          <h2 className="text-2xl font-bold mb-4">Enter Your Gmail</h2>
+          <h2 className="text-2xl text-black font-bold mb-4">Enter Your Gmail</h2>
           <input
             type="email"
             placeholder="Enter your Gmail"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="p-2 border rounded-lg w-full mb-4"
+            className="p-2 text-black border rounded-lg w-full max-w-md mx-auto mb-4"
           />
+          <br/>
           <button
             onClick={() => setEmailSubmitted(true)}
-            className="px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg w-full"
+            className="px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg w-full max-w-md mx-auto"
           >
             Submit Email
           </button>
@@ -172,16 +174,19 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
         </div>
       ) : (
         <>
-          {/* Quiz Title and Timer */}
+          {/* Quiz Title & Timer */}
           <div className="flex-1">
-            <div className="flex justify-between items-center w-full mb-4">
-            <h2 className="text-2xl font-bold text-blue-600">{QuizItems?.[0]?.title || 'Quiz Title'}</h2>
-
-              <div className="text-xl font-bold text-red-600 bg-gray-200 px-4 py-2 rounded-lg">
+            <div className="flex flex-col md:flex-row justify-between items-center w-full mb-4">
+              <h2 className="text-xl md:text-2xl font-bold text-blue-600">
+                {QuizItems?.[0]?.title || 'Quiz Title'}
+              </h2>
+  
+              <div className="text-lg md:text-xl font-bold text-red-600 bg-gray-200 px-4 py-2 rounded-lg mt-2 md:mt-0">
                 Time Left: {formatTime(timeLeft)}
               </div>
             </div>
-
+  
+            {/* Quiz Question */}
             <QuizQuestion
               question={allQuestions[currentQuestionIndex] ?? {
                 id: '',
@@ -191,7 +196,6 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
                 options: [],
               }}
               selectedAnswer={answers[allQuestions[currentQuestionIndex]?.id ?? ''] || ''}
-
               onSelectAnswer={handleAnswer}
               onNext={() => setCurrentQuestionIndex((prev) => prev + 1)}
               onPrevious={() => setCurrentQuestionIndex((prev) => prev - 1)}
@@ -199,16 +203,18 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
               isFirstQuestion={currentQuestionIndex === 0}
             />
           </div>
-
-          {/* Quiz Sidebar */}
-          <QuizSidebar
-            categories={QuizItems[0]?.categories || []}
-            currentQuestionIndex={currentQuestionIndex}
-            allQuestions={allQuestions}
-            answers={answers}
-            scrollToQuestion={setCurrentQuestionIndex}
-            submitQuiz={submitQuiz}
-          />
+  
+          {/* Quiz Sidebar (Stacked on Small Screens) */}
+          <div className="w-full md:w-1/4 md:ml-6 mt-4 md:mt-0">
+            <QuizSidebar
+              categories={QuizItems[0]?.categories || []}
+              currentQuestionIndex={currentQuestionIndex}
+              allQuestions={allQuestions}
+              answers={answers}
+              scrollToQuestion={setCurrentQuestionIndex}
+              submitQuiz={submitQuiz}
+            />
+          </div>
         </>
       )}
     </div>
