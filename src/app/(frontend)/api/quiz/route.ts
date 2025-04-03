@@ -14,50 +14,43 @@ export async function GET() {
   }
 }
 
+
 export async function POST(req: Request) {
   try {
-    const { email, quizId, answers } = await req.json()
-    const payload = await getPayload({ config })
+    const payload = await getPayload({ config });
 
-    if (!email || !quizId || !answers) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    // Debugging: List all available collections
+    console.log("Available collections:", Object.keys(payload.collections));
+
+    const { email, quizId, answers, categoryScores, totalScore } = await req.json();
+
+    if (!email || !quizId || !answers || typeof totalScore !== 'number' || typeof categoryScores !== 'object') {
+      return NextResponse.json({ error: "Invalid data format" }, { status: 400 });
+    }
+
+    // ✅ Check if "quizResponses" exists
+    if (!payload.collections.quizResponses) {
+      console.error("Error: quizResponses collection not found in PayloadCMS");
+      return NextResponse.json({ error: "Collection not found" }, { status: 500 });
     }
 
     const response = await payload.create({
-      collection: 'quizResponses',
+      collection: "quizResponses",
       data: {
-        email, 
+        email,
         quizId,
         answers,
-        submittedAt: new Date().toISOString(), 
-      },
-    })
+        categoryScores,
+        totalScore,
+        submittedAt: new Date().toISOString(),
 
-    return NextResponse.json(response, { status: 201 })
+      },
+    });
+
+    return NextResponse.json(response, { status: 201 });
   } catch (error) {
-    console.error('Quiz Submission Error:', error)
-    return NextResponse.json({ error: 'Failed to submit answers' }, { status: 500 })
+    console.error("Quiz Submission Error:", error);
+    return NextResponse.json({ error: "Failed to submit quiz" }, { status: 500 });
   }
 }
 
-// POST: Submit answers
-// export async function POST(req: Request) {
-//     try {
-//       const { userId, quizId, answers } = await req.json();
-//       const payload = await getPayload({ config });
-
-//       const response = await payload.create({
-//         collection: "quizResponses",
-//         data: {
-//           userId,
-//           quizId,
-//           answers,
-//           submittedAt: new Date().toISOString() // ✅ Convert Date to string
-//         },
-//       });
-
-//       return NextResponse.json(response, { status: 201 });
-//     } catch (error) {
-//       return NextResponse.json({ error: "Failed to submit answers" }, { status: 500 });
-//     }
-//   }

@@ -1,10 +1,13 @@
-"use client";
-import React, { useState } from "react";
+'use client';
+import React, { useState, useEffect } from 'react';
+import QuizQuestion from './QuizQuestion';
+import QuizSidebar from './QuizSidebar';
 
 interface QuizItem {
   id: string;
   title: string;
   categories: {
+    name: string;
     id: string;
     category: string;
     questions: {
@@ -20,65 +23,132 @@ interface QuizItem {
 export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
   const [submitted, setSubmitted] = useState(false);
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
   const [emailSubmitted, setEmailSubmitted] = useState(false);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(3600); // Default 60 minutes
 
-  // Handle email submission
-  const handleEmailSubmit = () => {
-    if (!email.includes("@")) {
-      alert("Please enter a valid Gmail address.");
+  // Load data from localStorage only on the client
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setAnswers(JSON.parse(localStorage.getItem('quizAnswers') || '{}'));
+      setEmail(localStorage.getItem('userEmail') || '');
+      setEmailSubmitted(!!localStorage.getItem('userEmail'));
+      setCurrentQuestionIndex(Number(localStorage.getItem('currentQuestionIndex')) || 0);
+      setTimeLeft(Number(localStorage.getItem('quizTimeLeft')) || 3600);
+    }
+  }, []);
+
+  // Save answers to localStorage when updated
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('quizAnswers', JSON.stringify(answers));
+    }
+  }, [answers]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('userEmail', email);
+    }
+  }, [email]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('currentQuestionIndex', currentQuestionIndex.toString());
+    }
+  }, [currentQuestionIndex]);
+
+  // Timer logic: decrease every second
+  useEffect(() => {
+    if (timeLeft <= 0) {
+      submitQuiz(); // Auto-submit when time reaches 0
       return;
     }
-    setEmailSubmitted(true);
-  };
 
-  // Handle answer selection
+    const timer = setInterval(() => {
+      setTimeLeft((prevTime) => {
+        const newTime = prevTime - 1;
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('quizTimeLeft', newTime.toString());
+        }
+        return newTime;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeLeft]);
+
+  const allQuestions = QuizItems.flatMap((quiz) =>
+    quiz.categories.flatMap((category) => category.questions)
+  );
+
   const handleAnswer = (questionId: string, answer: string) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: answer }));
+    setAnswers((prev) => ({
+      ...prev,
+      [questionId]: answer,
+    }));
   };
 
   const submitQuiz = async () => {
-    try {
-      if (!email) {
-        alert("Please enter your Gmail before submitting the quiz.");
-        return;
-      }
+    if (!email) {
+      alert('Please enter your Gmail before submitting the quiz.');
+      return;
+    }
 
-      if (!QuizItems || QuizItems.length === 0) {
-        alert("No quiz data available.");
-        return;
-      }
+    let totalScore = 0;
+    const categoryScores: { [key: string]: number } = {};
 
-      console.log("Submitting:", { email, quizId: QuizItems[0]?.id, answers });
-
-      const res = await fetch("/api/quiz", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          quizId: QuizItems[0]?.id,
-          answers,
-        }),
+    QuizItems.forEach((quiz) => {
+      quiz.categories.forEach((category) => {
+        let categoryTotal = 0;
+        category.questions.forEach((question) => {
+          if (answers[question.id] === question.correctAnswer) {
+            categoryTotal += question.value;
+            totalScore += question.value;
+          }
+        });
+        categoryScores[category.category] = categoryTotal;
       });
+    });
 
-      const responseData = await res.json();
-      console.log("Response from API:", responseData);
+    const res = await fetch('/api/quiz', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        quizId: QuizItems[0]?.id,
+        answers,
+        categoryScores,
+        totalScore,
+      }),
+    });
 
-      if (!res.ok) throw new Error(responseData.error || "Failed to submit answers");
+    if (!res.ok) {
+      alert('Error submitting quiz.');
+      return;
+    }
 
-      setSubmitted(true);
-      alert("Quiz submitted successfully!");
-    } catch (error) {
-      console.error("Submission error:", error);
-      alert("Error submitting quiz.");
+    setSubmitted(true);
+    alert('Quiz submitted successfully!');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('quizAnswers');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('currentQuestionIndex');
+      localStorage.removeItem('quizTimeLeft');
     }
   };
 
+  // Function to format time into MM:SS
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+  };
+
   return (
-    <div className="max-w-3xl py-24 mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
-      {/* Step 1: Get User's Gmail */}
+    <div className="relative mt-10 p-6 bg-white shadow-lg rounded-lg flex">
       {!emailSubmitted ? (
-        <div className="text-center">
+        <div className="w-full text-center">
           <h2 className="text-2xl font-bold mb-4">Enter Your Gmail</h2>
           <input
             type="email"
@@ -88,75 +158,57 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
             className="p-2 border rounded-lg w-full mb-4"
           />
           <button
-            onClick={handleEmailSubmit}
-            className="px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 w-full"
+            onClick={() => setEmailSubmitted(true)}
+            className="px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg w-full"
           >
             Submit Email
           </button>
         </div>
       ) : submitted ? (
-        <p className="text-green-600 font-bold text-center">Quiz Submitted!</p>
+        <div className="w-full text-center">
+          <h3 className="text-lg font-bold mt-4">Quiz Submitted!</h3>
+        </div>
       ) : (
-        QuizItems.map((quiz) => (
-          <div key={quiz.id} className="mb-6">
-            {/* Quiz Title */}
-            <h2 className="text-2xl font-bold text-blue-600">{quiz.title}</h2>
+        <>
+          {/* Quiz Title and Timer */}
+          <div className="flex-1">
+            <div className="flex justify-between items-center w-full mb-4">
+            <h2 className="text-2xl font-bold text-blue-600">{QuizItems?.[0]?.title || 'Quiz Title'}</h2>
 
-            {/* Categories */}
-            {quiz.categories.map((category) => (
-              <div key={category.id} className="mt-6">
-                {/* Category Name */}
-                <h3 className="text-xl font-semibold text-gray-900 border-b pb-2 mb-4">
-                  {category.category}
-                </h3>
-
-                {/* Questions within Category */}
-                {category.questions.map((q) => (
-                  <div key={q.id} className="mt-4 p-4 border rounded-lg">
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      {q.question} <span className="text-sm text-gray-500">(Value: {q.value})</span>
-                    </h3>
-
-                    {/* Options */}
-                    <div className="mt-2 space-y-2">
-                      {q.options.map((opt) => (
-                        <label
-                          key={opt.id}
-                          className="block p-2 border rounded-lg cursor-pointer hover:bg-gray-100"
-                        >
-                          <input
-                            type="radio"
-                            name={q.id}
-                            value={opt.option}
-                            onChange={() => handleAnswer(q.id, opt.option)}
-                            className="mr-2"
-                          />
-                          {opt.option}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+              <div className="text-xl font-bold text-red-600 bg-gray-200 px-4 py-2 rounded-lg">
+                Time Left: {formatTime(timeLeft)}
               </div>
-            ))}
-          </div>
-        ))
-      )}
+            </div>
 
-      {/* Submit Button */}
-      {emailSubmitted && !submitted && (
-        <button
-          onClick={submitQuiz}
-          className="mt-4 px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 w-full"
-        >
-          Submit Quiz
-        </button>
+            <QuizQuestion
+              question={allQuestions[currentQuestionIndex] ?? {
+                id: '',
+                question: 'Loading...',
+                correctAnswer: '',
+                value: 0,
+                options: [],
+              }}
+              selectedAnswer={answers[allQuestions[currentQuestionIndex]?.id ?? ''] || ''}
+
+              onSelectAnswer={handleAnswer}
+              onNext={() => setCurrentQuestionIndex((prev) => prev + 1)}
+              onPrevious={() => setCurrentQuestionIndex((prev) => prev - 1)}
+              isLastQuestion={currentQuestionIndex === allQuestions.length - 1}
+              isFirstQuestion={currentQuestionIndex === 0}
+            />
+          </div>
+
+          {/* Quiz Sidebar */}
+          <QuizSidebar
+            categories={QuizItems[0]?.categories || []}
+            currentQuestionIndex={currentQuestionIndex}
+            allQuestions={allQuestions}
+            answers={answers}
+            scrollToQuestion={setCurrentQuestionIndex}
+            submitQuiz={submitQuiz}
+          />
+        </>
       )}
     </div>
   );
 }
-
-
-
-
-
