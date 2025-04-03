@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 
-// GET: Fetch quizzes
 export async function GET() {
   try {
     const payload = await getPayload({ config })
@@ -19,7 +18,6 @@ export async function POST(req: Request) {
   try {
     const payload = await getPayload({ config });
 
-    // Debugging: List all available collections
     console.log("Available collections:", Object.keys(payload.collections));
 
     const { email, quizId, answers, categoryScores, totalScore } = await req.json();
@@ -28,7 +26,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid data format" }, { status: 400 });
     }
 
-    // ✅ Check if "quizResponses" exists
     if (!payload.collections.quizResponses) {
       console.error("Error: quizResponses collection not found in PayloadCMS");
       return NextResponse.json({ error: "Collection not found" }, { status: 500 });
