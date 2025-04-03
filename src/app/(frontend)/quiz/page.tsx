@@ -2,7 +2,7 @@ import React from "react";
 import QuizClient from "./quiz";
 
 const QuizServer = async () => {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+  const API_URL =  "https://devopsfarm-payload.vercel.app";
   console.log("Fetching from:", `${API_URL}/api/quiz`);
 
   const res = await fetch(`${API_URL}/api/quiz`, {
