@@ -33,7 +33,7 @@ const QuizQuestion: React.FC<QuestionProps> = ({
       {/* Answer Options */}
       <div className="mt-2 space-y-2">
         {question.options.map((opt) => (
-          <label key={opt.option} className="block p-2 border rounded-lg cursor-pointer hover:bg-gray-100">
+          <label key={opt.option} className="block p-2 text-black border rounded-lg cursor-pointer hover:bg-gray-100">
             <input
               type="radio"
               name={question.id}
@@ -60,7 +60,7 @@ const QuizQuestion: React.FC<QuestionProps> = ({
         <button
           onClick={onNext}
           disabled={isLastQuestion}
-          className={`px-4 py-2 font-semibold rounded-lg ${isLastQuestion ? 'bg-gray-300 cursor-not-allowed' : 'bg-green-500 text-white hover:bg-green-600'}`}
+          className={`px-4 py-2 font-semibold rounded-lg ${isLastQuestion ? 'bg-gray-300 cursor-not-allowed' : 'bg-green-500 text-black hover:bg-green-600'}`}
         >
           Next
         </button>
