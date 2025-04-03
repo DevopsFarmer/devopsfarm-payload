@@ -839,6 +839,16 @@ export interface Quiz {
 export interface QuizResponse {
   id: string;
   email: string;
+  totalScore: number;
+  categoryScores:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   quizId: string;
   answers:
     | {
@@ -1520,6 +1530,8 @@ export interface QuizzesSelect<T extends boolean = true> {
  */
 export interface QuizResponsesSelect<T extends boolean = true> {
   email?: T;
+  totalScore?: T;
+  categoryScores?: T;
   quizId?: T;
   answers?: T;
   submittedAt?: T;
