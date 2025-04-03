@@ -10,7 +10,7 @@ const QuizServer = async () => {
 
   const quizData = await res.json();
   console.log("-=-=-===-======--=",quizData)
-  return ;
+  return <QuizClient QuizItems={quizData} />;
 };
 
 export default QuizServer;

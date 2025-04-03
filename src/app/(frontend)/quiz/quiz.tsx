@@ -4,11 +4,16 @@ import React, { useState } from "react";
 interface QuizItem {
   id: string;
   title: string;
-  questions: {
+  categories: {
     id: string;
-    question: string;
-    correctAnswer: string;
-    options: { option: string; id: string }[];
+    category: string;
+    questions: {
+      id: string;
+      question: string;
+      correctAnswer: string;
+      value: number;
+      options: { option: string; id: string }[];
+    }[];
   }[];
 }
 
@@ -32,36 +37,35 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
     setAnswers((prev) => ({ ...prev, [questionId]: answer }));
   };
 
-
   const submitQuiz = async () => {
     try {
       if (!email) {
         alert("Please enter your Gmail before submitting the quiz.");
         return;
       }
-  
+
       if (!QuizItems || QuizItems.length === 0) {
         alert("No quiz data available.");
         return;
       }
-  
+
       console.log("Submitting:", { email, quizId: QuizItems[0]?.id, answers });
-  
+
       const res = await fetch("/api/quiz", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email, 
-          quizId: QuizItems[0]?.id, // ✅ Use optional chaining to prevent error
+          email,
+          quizId: QuizItems[0]?.id,
           answers,
         }),
       });
-  
+
       const responseData = await res.json();
       console.log("Response from API:", responseData);
-  
+
       if (!res.ok) throw new Error(responseData.error || "Failed to submit answers");
-  
+
       setSubmitted(true);
       alert("Quiz submitted successfully!");
     } catch (error) {
@@ -69,9 +73,6 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
       alert("Error submitting quiz.");
     }
   };
-  
-  
-  
 
   return (
     <div className="max-w-3xl py-24 mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
@@ -101,31 +102,41 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
             {/* Quiz Title */}
             <h2 className="text-2xl font-bold text-blue-600">{quiz.title}</h2>
 
-            {/* Quiz Questions */}
-            {quiz.questions.map((q) => (
-              <div key={q.id} className="mt-4 p-4 border rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  {q.question}
+            {/* Categories */}
+            {quiz.categories.map((category) => (
+              <div key={category.id} className="mt-6">
+                {/* Category Name */}
+                <h3 className="text-xl font-semibold text-gray-900 border-b pb-2 mb-4">
+                  {category.category}
                 </h3>
 
-                {/* Options */}
-                <div className="mt-2 space-y-2">
-                  {q.options.map((opt) => (
-                    <label
-                      key={opt.id}
-                      className="block p-2 border rounded-lg cursor-pointer hover:bg-gray-100"
-                    >
-                      <input
-                        type="radio"
-                        name={q.id}
-                        value={opt.option}
-                        onChange={() => handleAnswer(q.id, opt.option)}
-                        className="mr-2"
-                      />
-                      {opt.option}
-                    </label>
-                  ))}
-                </div>
+                {/* Questions within Category */}
+                {category.questions.map((q) => (
+                  <div key={q.id} className="mt-4 p-4 border rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {q.question} <span className="text-sm text-gray-500">(Value: {q.value})</span>
+                    </h3>
+
+                    {/* Options */}
+                    <div className="mt-2 space-y-2">
+                      {q.options.map((opt) => (
+                        <label
+                          key={opt.id}
+                          className="block p-2 border rounded-lg cursor-pointer hover:bg-gray-100"
+                        >
+                          <input
+                            type="radio"
+                            name={q.id}
+                            value={opt.option}
+                            onChange={() => handleAnswer(q.id, opt.option)}
+                            className="mr-2"
+                          />
+                          {opt.option}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             ))}
           </div>
@@ -144,5 +155,8 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
     </div>
   );
 }
+
+
+
 
 
