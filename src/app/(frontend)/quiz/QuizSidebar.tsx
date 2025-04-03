@@ -38,7 +38,7 @@ const QuizSidebar: React.FC<SidebarProps> = ({
                   <button
                     key={q.id}
                     onClick={() => scrollToQuestion(allQuestions.indexOf(q))}
-                    className={`w-8 h-8 text-sm font-semibold rounded-full border ${
+                    className={`w-8 h-8 text-sm text-black font-semibold rounded-full border ${
                       allQuestions.indexOf(q) === currentQuestionIndex
                         ? 'bg-blue-500 text-white'
                         : answers[q.id]
