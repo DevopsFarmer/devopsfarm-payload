@@ -9,7 +9,8 @@ const QuizServer = async () => {
   if (!res.ok) throw new Error("Failed to fetch quiz data");
 
   const quizData = await res.json();
-  return <QuizClient QuizItems={quizData} />;
+  console.log("-=-=-===-======--=",quizData)
+  return ;
 };
 
 export default QuizServer;

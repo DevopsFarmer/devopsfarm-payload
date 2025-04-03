@@ -7,7 +7,7 @@ export async function GET() {
   try {
     const payload = await getPayload({ config })
     const { docs } = await payload.find({ collection: 'quizzes' })
-
+     
     return NextResponse.json(docs, { status: 200 })
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch quiz data' }, { status: 500 })
@@ -26,10 +26,10 @@ export async function POST(req: Request) {
     const response = await payload.create({
       collection: 'quizResponses',
       data: {
-        email, // ✅ Store email instead of userId
+        email, 
         quizId,
         answers,
-        submittedAt: new Date().toISOString(), // ✅ Ensure Date is a string
+        submittedAt: new Date().toISOString(), 
       },
     })
 

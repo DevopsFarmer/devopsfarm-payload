@@ -809,16 +809,23 @@ export interface Footer1 {
 export interface Quiz {
   id: string;
   title: string;
-  questions?:
+  categories?:
     | {
-        question: string;
-        options?:
+        category: string;
+        questions?:
           | {
-              option: string;
+              question: string;
+              options?:
+                | {
+                    option: string;
+                    id?: string | null;
+                  }[]
+                | null;
+              correctAnswer: string;
+              value: number;
               id?: string | null;
             }[]
           | null;
-        correctAnswer: string;
         id?: string | null;
       }[]
     | null;
@@ -1484,17 +1491,24 @@ export interface Footer1Select<T extends boolean = true> {
  */
 export interface QuizzesSelect<T extends boolean = true> {
   title?: T;
-  questions?:
+  categories?:
     | T
     | {
-        question?: T;
-        options?:
+        category?: T;
+        questions?:
           | T
           | {
-              option?: T;
+              question?: T;
+              options?:
+                | T
+                | {
+                    option?: T;
+                    id?: T;
+                  };
+              correctAnswer?: T;
+              value?: T;
               id?: T;
             };
-        correctAnswer?: T;
         id?: T;
       };
   updatedAt?: T;
