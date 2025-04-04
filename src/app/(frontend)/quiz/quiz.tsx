@@ -29,30 +29,34 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
   const [timeLeft, setTimeLeft] = useState(3600) // Default 60 minutes
   const [name, setName] = useState('')
   const [pnumber, setPnumber] = useState('')
+  const [showTerms, setShowTerms] = useState(false)
+  const [termsTimeLeft, setTermsTimeLeft] = useState(600) 
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [error, setError] = useState('')
 
   const handleSubmit = () => {
     const emailRegex = /^[^\s@]+@gmail\.com$/
-
+  
     if (!email || !emailRegex.test(email)) {
       setError('Please enter a valid Gmail address.')
       return
     }
-
+  
     if (!name.trim()) {
       setError('Please enter your name.')
       return
     }
-
-    if (!pnumber.trim() || pnumber.length < 10) {
-      setError('Please enter a valid mobile number.')
+  
+    if (!pnumber.trim() || pnumber.length !== 10) {
+      setError('Please enter a valid 10-digit mobile number.')
       return
     }
-
+  
     setError('')
-    setEmailSubmitted(true)
+    setShowTerms(true)
   }
+  
 
   // Load data from localStorage only on the client
   useEffect(() => {
@@ -123,6 +127,9 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
   }
 
   const submitQuiz = async () => {
+    if (isSubmitting) return; // Prevent multiple clicks
+
+    setIsSubmitting(true); // Start loading
     if (!email) {
       alert('Please enter your Gmail before submitting the quiz.')
       return
@@ -173,6 +180,24 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
     }
   }
 
+  useEffect(() => {
+    if (!showTerms) return
+  
+    const interval = setInterval(() => {
+      setTermsTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval)
+          setEmailSubmitted(true) // move to quiz page
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+  
+    return () => clearInterval(interval)
+  }, [showTerms])
+  
+
   // Function to format time into MM:SS
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60)
@@ -182,7 +207,8 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
 
   return (
     <div className="relative  p-4 md:p-6 bg-white shadow-lg rounded-lg flex flex-col md:flex-row">
-      {!emailSubmitted ? (
+  {!emailSubmitted ? (
+  !showTerms ? (
         <div className="w-full text-center">
           <h2 className="text-2xl text-black font-bold mb-4">Enter Your Gmail</h2>
           <input
@@ -228,7 +254,36 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
             Submit Email
           </button>
         </div>
-      ) : submitted ? (
+      ) : (
+        // Terms and Conditions Page
+        <div className="w-full text-center">
+          <h2 className="text-2xl font-bold mb-4 text-black">Quiz Terms & Conditions</h2>
+          <p className="mb-4 text-gray-700 max-w-2xl mx-auto">
+            Please read the following terms before starting the quiz:
+          </p>
+          <ul className="text-left text-gray-700 max-w-xl mx-auto list-disc pl-6 space-y-2 mb-6">
+            <li>Quiz duration is limited. You cannot pause the timer.</li>
+            <li>Each question carries the marks as mentioned.</li>
+            <li>Do not refresh or close the browser during the quiz.</li>
+            <li>Your score will be submitted automatically after time ends.</li>
+          </ul>
+          <p className="text-lg font-semibold text-red-600 mb-4">
+            Starting Quiz In: {formatTime(termsTimeLeft)}
+          </p>
+          <button
+  onClick={() => {
+    setEmailSubmitted(true)
+    setTermsTimeLeft(0)
+  }}
+  className="mt-4 px-6 py-2 bg-green-500 text-white font-semibold rounded-lg"
+>
+  Start Quiz Now
+</button>
+
+          <p className="text-sm text-gray-500">The quiz will start automatically when the timer ends.</p>
+        </div>
+      )
+    ) : submitted ? (
         <div className="w-full text-center">
           <h3 className="text-lg font-bold mt-4">Quiz Submitted!</h3>
         </div>
@@ -275,6 +330,7 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
               answers={answers}
               scrollToQuestion={setCurrentQuestionIndex}
               submitQuiz={submitQuiz}
+              isSubmitting={isSubmitting}
             />
           </div>
         </>
