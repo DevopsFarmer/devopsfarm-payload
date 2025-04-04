@@ -26,12 +26,12 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
   const [email, setEmail] = useState('')
   const [emailSubmitted, setEmailSubmitted] = useState(false)
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [timeLeft, setTimeLeft] = useState(3600)
   const [name, setName] = useState('')
   const [pnumber, setPnumber] = useState('')
   const [showTerms, setShowTerms] = useState(false)
   const [termsTimeLeft, setTermsTimeLeft] = useState(600)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [quizTimeLeft, setQuizTimeLeft] = useState<number | null>(null)
 
   const [error, setError] = useState('')
 
@@ -71,7 +71,6 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
       )
 
       setCurrentQuestionIndex(Number(localStorage.getItem('currentQuestionIndex')) || 0)
-      setTimeLeft(Number(localStorage.getItem('quizTimeLeft')) || 3600)
     }
   }, [])
 
@@ -96,25 +95,7 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
     }
   }, [currentQuestionIndex])
 
-  // Timer logic: decrease every second
-  useEffect(() => {
-    if (typeof window === 'undefined') return
 
-    if (timeLeft <= 0) {
-      submitQuiz() // Auto-submit when time reaches 0
-      return
-    }
-
-    const timer = setInterval(() => {
-      setTimeLeft((prevTime) => {
-        const newTime = prevTime - 1
-        localStorage.setItem('quizTimeLeft', newTime.toString())
-        return newTime
-      })
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [timeLeft])
 
   const allQuestions = QuizItems.flatMap((quiz) =>
     quiz.categories.flatMap((category) => category.questions),
@@ -177,7 +158,6 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
       localStorage.removeItem('quizAnswers')
       localStorage.removeItem('userEmail')
       localStorage.removeItem('currentQuestionIndex')
-      localStorage.removeItem('quizTimeLeft')
     }
   }
 
@@ -198,7 +178,39 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
     return () => clearInterval(interval)
   }, [showTerms])
 
-  // Function to format time into MM:SS
+  useEffect(() => {
+    if (quizTimeLeft === null || submitted) return
+  
+    if (quizTimeLeft <= 0) {
+      submitQuiz()
+      return
+    }
+  
+    const timer = setInterval(() => {
+      setQuizTimeLeft((prev) => (prev !== null ? prev - 1 : null))
+    }, 1000)
+  
+    return () => clearInterval(timer)
+  }, [quizTimeLeft, submitted])
+
+  
+
+
+  useEffect(() => {
+    if (submitted) return
+  
+    const storedStartTime = localStorage.getItem('quizStartTime')
+    if (storedStartTime) {
+      const elapsed = Math.floor((Date.now() - parseInt(storedStartTime)) / 1000)
+      const remaining = 3600 - elapsed
+      if (remaining <= 0) {
+        submitQuiz()
+      } else {
+        setQuizTimeLeft(remaining)
+      }
+    }
+  }, [submitted])
+  
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60)
     const remainingSeconds = seconds % 60
@@ -290,10 +302,15 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
                 Starting Quiz In: {formatTime(termsTimeLeft)}
               </p>
               <button
-                onClick={() => {
-                  setEmailSubmitted(true)
-                  setTermsTimeLeft(0)
-                }}
+               onClick={() => {
+                setEmailSubmitted(true)
+                setTermsTimeLeft(0)
+                const now = Date.now()
+                localStorage.setItem('quizStartTime', now.toString())
+                setQuizTimeLeft(3600) // 1 hour
+              }}
+              
+              
                 className="mt-4 px-6 py-2 bg-green-500 text-white font-semibold rounded-lg"
               >
                 Start Quiz Now
@@ -317,8 +334,10 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
                 {QuizItems?.[0]?.title || 'Quiz Title'}
               </h2>
               <div className="text-lg md:text-xl font-bold text-red-600 bg-gray-200 px-4 py-2 rounded-lg mt-2 md:mt-0">
-                Time Left: {formatTime(timeLeft)}
-              </div>
+  Time Left: {quizTimeLeft !== null ? formatTime(quizTimeLeft) : '1:00:00'}
+</div>
+
+              
             </div>
             <QuizQuestion
               question={
