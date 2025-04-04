@@ -14,7 +14,8 @@ interface SidebarProps {
   allQuestions: { id: string }[];
   answers: { [key: string]: string };
   scrollToQuestion: (index: number) => void;
-  submitQuiz: () => void; // ✅ Added submit function
+  submitQuiz: () => void; 
+  isSubmitting: boolean;
 }
 
 const QuizSidebar: React.FC<SidebarProps> = ({
@@ -23,7 +24,8 @@ const QuizSidebar: React.FC<SidebarProps> = ({
   allQuestions,
   answers,
   scrollToQuestion,
-  submitQuiz, // ✅ Receive submit function
+  submitQuiz, 
+  isSubmitting,
 }) => {
   return (
     <div className=" bg-gray-100 shadow-lg rounded-lg p-4 flex flex-col justify-between">
@@ -57,12 +59,14 @@ const QuizSidebar: React.FC<SidebarProps> = ({
 
       {/* ✅ Submit Button at the Bottom */}
       <div className="mt-6">
-        <button
+      <button
           onClick={submitQuiz}
-          className="w-full px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600"
+          className="w-full px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 disabled:opacity-50"
+          disabled={isSubmitting}
         >
-          Submit Quiz
+          {isSubmitting ? 'Submitting...' : 'Submit Quiz'}
         </button>
+
       </div>
     </div>
   );
