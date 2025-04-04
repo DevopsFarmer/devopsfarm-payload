@@ -223,11 +223,11 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
           // Email Form
           <div className="flex items-center justify-center w-screen h-screen bg-gray-100">
             <div className="w-full max-w-lg p-6 bg-white shadow-lg rounded-lg text-center">
-              <h2 className="text-2xl text-black font-bold mb-4">Enter Your Gmail</h2>
+              <h2 className="text-2xl text-black font-bold mb-4">Enter Your Email</h2>
 
               <input
                 type="email"
-                placeholder="Enter your Gmail"
+                placeholder="Enter your Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="p-2 text-black border rounded-lg w-full mb-2"
