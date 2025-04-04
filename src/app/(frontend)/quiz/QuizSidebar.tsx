@@ -16,6 +16,7 @@ interface SidebarProps {
   scrollToQuestion: (index: number) => void;
   submitQuiz: () => void; 
   isSubmitting: boolean;
+  isSubmitted: boolean;
 }
 
 const QuizSidebar: React.FC<SidebarProps> = ({
