@@ -9,7 +9,7 @@ interface QuestionProps {
     options: { option: string; id: string }[];
   };
   selectedAnswer: string;
-  onSelectAnswer: (question: string, answer: string) => void;
+  onSelectAnswer: (questionId: string, answer: string) => void;
   onNext: () => void;
   onPrevious: () => void;
   isLastQuestion: boolean;
@@ -39,7 +39,7 @@ const QuizQuestion: React.FC<QuestionProps> = ({
               name={question.id}
               value={opt.option}
               checked={selectedAnswer === opt.option}
-              onChange={() => onSelectAnswer(question.question, opt.option)}
+              onChange={() => onSelectAnswer(question.id, opt.option)}
               className="mr-2"
             />
             {opt.option}
