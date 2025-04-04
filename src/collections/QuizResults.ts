@@ -4,6 +4,8 @@ const QuizResponses: CollectionConfig = {
   slug: "quizResponses",
   fields: [
     { name: "email", type: "text", required: true },
+    { name: "pnumber", type: "number", required: true },
+    { name: "name", type: "text", required: true },
     { name: "totalScore", type: "number", required: true }, 
     { name: "categoryScores", type: "json", required: true }, 
     { name: "quizId", type: "text", required: true },

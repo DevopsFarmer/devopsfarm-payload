@@ -20,9 +20,9 @@ export async function POST(req: Request) {
 
     console.log("Available collections:", Object.keys(payload.collections));
 
-    const { email, quizId, answers, categoryScores, totalScore } = await req.json();
+    const { email, pnumber, name,  quizId, answers, categoryScores, totalScore } = await req.json();
 
-    if (!email || !quizId || !answers || typeof totalScore !== 'number' || typeof categoryScores !== 'object') {
+    if (!email || !quizId || !answers || !pnumber || typeof totalScore !== 'number' || typeof categoryScores !== 'object') {
       return NextResponse.json({ error: "Invalid data format" }, { status: 400 });
     }
 
@@ -35,6 +35,8 @@ export async function POST(req: Request) {
       collection: "quizResponses",
       data: {
         email,
+        pnumber,
+        name,
         quizId,
         answers,
         categoryScores,

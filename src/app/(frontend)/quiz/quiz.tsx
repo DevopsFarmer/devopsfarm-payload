@@ -1,155 +1,187 @@
-
-
-'use client';
-import React, { useState, useEffect } from 'react';
-import QuizQuestion from './QuizQuestion';
-import QuizSidebar from './QuizSidebar';
+'use client'
+import React, { useState, useEffect } from 'react'
+import QuizQuestion from './QuizQuestion'
+import QuizSidebar from './QuizSidebar'
 
 interface QuizItem {
-  id: string;
-  title: string;
+  id: string
+  title: string
   categories: {
-    name: string;
-    id: string;
-    category: string;
+    name: string
+    id: string
+    category: string
     questions: {
-      id: string;
-      question: string;
-      correctAnswer: string;
-      value: number;
-      options: { option: string; id: string }[];
-    }[];
-  }[];
+      id: string
+      question: string
+      correctAnswer: string
+      value: number
+      options: { option: string; id: string }[]
+    }[]
+  }[]
 }
 
 export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
-  const [answers, setAnswers] = useState<{ [key: string]: string }>({});
-  const [submitted, setSubmitted] = useState(false);
-  const [email, setEmail] = useState('');
-  const [emailSubmitted, setEmailSubmitted] = useState(false);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(3600); // Default 60 minutes
+  const [answers, setAnswers] = useState<{ [key: string]: string }>({})
+  const [submitted, setSubmitted] = useState(false)
+  const [email, setEmail] = useState('')
+  const [emailSubmitted, setEmailSubmitted] = useState(false)
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  const [timeLeft, setTimeLeft] = useState(3600) // Default 60 minutes
+  const [name, setName] = useState('')
+  const [pnumber, setPnumber] = useState('')
+
+  const [error, setError] = useState('')
+
+  const handleSubmit = () => {
+    const emailRegex = /^[^\s@]+@gmail\.com$/
+
+    if (!email || !emailRegex.test(email)) {
+      setError('Please enter a valid Gmail address.')
+      return
+    }
+
+    if (!name.trim()) {
+      setError('Please enter your name.')
+      return
+    }
+
+    if (!pnumber.trim() || pnumber.length < 10) {
+      setError('Please enter a valid mobile number.')
+      return
+    }
+
+    setError('')
+    setEmailSubmitted(true)
+  }
 
   // Load data from localStorage only on the client
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setAnswers(JSON.parse(localStorage.getItem('quizAnswers') || '{}'));
-      setEmail(localStorage.getItem('userEmail') || '');
-      setEmailSubmitted(!!localStorage.getItem('userEmail'));
-      setCurrentQuestionIndex(Number(localStorage.getItem('currentQuestionIndex')) || 0);
-      setTimeLeft(Number(localStorage.getItem('quizTimeLeft')) || 3600);
+      setAnswers(JSON.parse(localStorage.getItem('quizAnswers') || '{}'))
+      setEmail(localStorage.getItem('userEmail') || '')
+      setEmailSubmitted(!!localStorage.getItem('userEmail'))
+      setCurrentQuestionIndex(Number(localStorage.getItem('currentQuestionIndex')) || 0)
+      setTimeLeft(Number(localStorage.getItem('quizTimeLeft')) || 3600)
     }
-  }, []);
+  }, [])
 
   // Save answers to localStorage when updated
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('quizAnswers', JSON.stringify(answers));
+      localStorage.setItem('quizAnswers', JSON.stringify(answers))
     }
-  }, [answers]);
+  }, [answers])
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('userEmail', email);
+      localStorage.setItem('userEmail', email)
     }
-  }, [email]);
+  }, [email])
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('currentQuestionIndex', currentQuestionIndex.toString());
+      localStorage.setItem('userName', name)
+      localStorage.setItem('userPhone', pnumber)
     }
-  }, [currentQuestionIndex]);
+  }, [name, pnumber])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('currentQuestionIndex', currentQuestionIndex.toString())
+    }
+  }, [currentQuestionIndex])
 
   // Timer logic: decrease every second
   useEffect(() => {
     if (timeLeft <= 0) {
-      submitQuiz(); // Auto-submit when time reaches 0
-      return;
+      submitQuiz() // Auto-submit when time reaches 0
+      return
     }
 
     const timer = setInterval(() => {
       setTimeLeft((prevTime) => {
-        const newTime = prevTime - 1;
+        const newTime = prevTime - 1
         if (typeof window !== 'undefined') {
-          localStorage.setItem('quizTimeLeft', newTime.toString());
+          localStorage.setItem('quizTimeLeft', newTime.toString())
         }
-        return newTime;
-      });
-    }, 1000);
+        return newTime
+      })
+    }, 1000)
 
-    return () => clearInterval(timer);
-  }, [timeLeft]);
+    return () => clearInterval(timer)
+  }, [timeLeft])
 
   const allQuestions = QuizItems.flatMap((quiz) =>
-    quiz.categories.flatMap((category) => category.questions)
-  );
+    quiz.categories.flatMap((category) => category.questions),
+  )
 
   const handleAnswer = (questionId: string, answer: string) => {
     setAnswers((prev) => ({
       ...prev,
       [questionId]: answer,
-    }));
-  };
+    }))
+  }
 
   const submitQuiz = async () => {
     if (!email) {
-      alert('Please enter your Gmail before submitting the quiz.');
-      return;
+      alert('Please enter your Gmail before submitting the quiz.')
+      return
     }
 
-    let totalScore = 0;
-    const categoryScores: { [key: string]: number } = {};
+    let totalScore = 0
+    const categoryScores: { [key: string]: number } = {}
 
     QuizItems.forEach((quiz) => {
       quiz.categories.forEach((category) => {
-        let categoryTotal = 0;
+        let categoryTotal = 0
         category.questions.forEach((question) => {
           if (answers[question.id] === question.correctAnswer) {
-            categoryTotal += question.value;
-            totalScore += question.value;
+            categoryTotal += question.value
+            totalScore += question.value
           }
-        });
-        categoryScores[category.category] = categoryTotal;
-      });
-    });
+        })
+        categoryScores[category.category] = categoryTotal
+      })
+    })
 
     const res = await fetch('/api/quiz', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email,
+        pnumber,
+        name,
         quizId: QuizItems[0]?.id,
         answers,
         categoryScores,
         totalScore,
       }),
-    });
+    })
 
     if (!res.ok) {
-      alert('Error submitting quiz.');
-      return;
+      alert('Error submitting quiz.')
+      return
     }
 
-    setSubmitted(true);
-    alert('Quiz submitted successfully!');
+    setSubmitted(true)
+    alert('Quiz submitted successfully!')
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('quizAnswers');
-      localStorage.removeItem('userEmail');
-      localStorage.removeItem('currentQuestionIndex');
-      localStorage.removeItem('quizTimeLeft');
+      localStorage.removeItem('quizAnswers')
+      localStorage.removeItem('userEmail')
+      localStorage.removeItem('currentQuestionIndex')
+      localStorage.removeItem('quizTimeLeft')
     }
-  };
+  }
 
   // Function to format time into MM:SS
   const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
-  };
+    const minutes = Math.floor(seconds / 60)
+    const remainingSeconds = seconds % 60
+    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`
+  }
 
   return (
-    <div className="relative mt-6 p-4 md:p-6 bg-white shadow-lg rounded-lg flex flex-col md:flex-row">
-      {/* Email Entry Section */}
+    <div className="relative  p-4 md:p-6 bg-white shadow-lg rounded-lg flex flex-col md:flex-row">
       {!emailSubmitted ? (
         <div className="w-full text-center">
           <h2 className="text-2xl text-black font-bold mb-4">Enter Your Gmail</h2>
@@ -158,11 +190,39 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
             placeholder="Enter your Gmail"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="p-2 text-black border rounded-lg w-full max-w-md mx-auto mb-4"
+            className="p-2 text-black border rounded-lg w-full max-w-md mx-auto mb-2"
           />
-          <br/>
+
+          <input
+            type="text"
+            placeholder="Enter your Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="p-2 text-black border rounded-lg w-full max-w-md mx-auto mb-2"
+          />
+
+          <div className="flex items-center justify-center max-w-md mx-auto mb-2">
+            <span className="p-2 bg-gray-200 text-black border border-r-0 rounded-l-lg">+91</span>
+            <input
+              type="tel"
+              pattern="[0-9]{10}"
+              maxLength={10}
+              placeholder="Enter your Mobile Number"
+              value={pnumber}
+              onChange={(e) => {
+                const input = e.target.value.replace(/\D/g, '') // Remove non-digit characters
+                if (input.length <= 10) {
+                  setPnumber(input)
+                }
+              }}
+              className="p-2 text-black border border-l-0 rounded-r-lg w-full"
+              required
+            />
+          </div>
+
+          {error && <p className="text-red-500 mb-2">{error}</p>}
           <button
-            onClick={() => setEmailSubmitted(true)}
+            onClick={handleSubmit}
             className="px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg w-full max-w-md mx-auto"
           >
             Submit Email
@@ -180,21 +240,23 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
               <h2 className="text-xl md:text-2xl font-bold text-blue-600">
                 {QuizItems?.[0]?.title || 'Quiz Title'}
               </h2>
-  
+
               <div className="text-lg md:text-xl font-bold text-red-600 bg-gray-200 px-4 py-2 rounded-lg mt-2 md:mt-0">
                 Time Left: {formatTime(timeLeft)}
               </div>
             </div>
-  
+
             {/* Quiz Question */}
             <QuizQuestion
-              question={allQuestions[currentQuestionIndex] ?? {
-                id: '',
-                question: 'Loading...',
-                correctAnswer: '',
-                value: 0,
-                options: [],
-              }}
+              question={
+                allQuestions[currentQuestionIndex] ?? {
+                  id: '',
+                  question: 'Loading...',
+                  correctAnswer: '',
+                  value: 0,
+                  options: [],
+                }
+              }
               selectedAnswer={answers[allQuestions[currentQuestionIndex]?.id ?? ''] || ''}
               onSelectAnswer={handleAnswer}
               onNext={() => setCurrentQuestionIndex((prev) => prev + 1)}
@@ -203,7 +265,7 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
               isFirstQuestion={currentQuestionIndex === 0}
             />
           </div>
-  
+
           {/* Quiz Sidebar (Stacked on Small Screens) */}
           <div className="w-full md:w-1/4 md:ml-6 mt-4 md:mt-0">
             <QuizSidebar
@@ -218,5 +280,5 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
         </>
       )}
     </div>
-  );
+  )
 }
