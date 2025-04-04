@@ -30,33 +30,32 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
   const [name, setName] = useState('')
   const [pnumber, setPnumber] = useState('')
   const [showTerms, setShowTerms] = useState(false)
-  const [termsTimeLeft, setTermsTimeLeft] = useState(600) 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [termsTimeLeft, setTermsTimeLeft] = useState(600)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [error, setError] = useState('')
 
   const handleSubmit = () => {
     const emailRegex = /^[^\s@]+@gmail\.com$/
-  
+
     if (!email || !emailRegex.test(email)) {
       setError('Please enter a valid Gmail address.')
       return
     }
-  
+
     if (!name.trim()) {
       setError('Please enter your name.')
       return
     }
-  
+
     if (!pnumber.trim() || pnumber.length !== 10) {
       setError('Please enter a valid 10-digit mobile number.')
       return
     }
-  
+
     setError('')
     setShowTerms(true)
   }
-  
 
   // Load data from localStorage only on the client
   useEffect(() => {
@@ -76,18 +75,15 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
     }
   }, [answers])
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('userEmail', email)
-    }
-  }, [email])
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('userName', name)
-      localStorage.setItem('userPhone', pnumber)
-    }
-  }, [name, pnumber])
+useEffect(() => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('userEmail', email);
+    localStorage.setItem('userName', name);
+    localStorage.setItem('userPhone', pnumber);
+  }
+}, [email, name, pnumber]);
+
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -97,23 +93,24 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
 
   // Timer logic: decrease every second
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     if (timeLeft <= 0) {
-      submitQuiz() // Auto-submit when time reaches 0
-      return
+      submitQuiz(); // Auto-submit when time reaches 0
+      return;
     }
 
     const timer = setInterval(() => {
       setTimeLeft((prevTime) => {
-        const newTime = prevTime - 1
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('quizTimeLeft', newTime.toString())
-        }
-        return newTime
-      })
-    }, 1000)
+        const newTime = prevTime - 1;
+        localStorage.setItem('quizTimeLeft', newTime.toString());
+        return newTime;
+      });
+    }, 1000);
 
-    return () => clearInterval(timer)
-  }, [timeLeft])
+    return () => clearInterval(timer);
+  }, [timeLeft]);
+
 
   const allQuestions = QuizItems.flatMap((quiz) =>
     quiz.categories.flatMap((category) => category.questions),
@@ -127,9 +124,9 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
   }
 
   const submitQuiz = async () => {
-    if (isSubmitting) return; // Prevent multiple clicks
+    if (isSubmitting) return // Prevent multiple clicks
 
-    setIsSubmitting(true); // Start loading
+    setIsSubmitting(true) // Start loading
     if (!email) {
       alert('Please enter your Gmail before submitting the quiz.')
       return
@@ -182,7 +179,7 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
 
   useEffect(() => {
     if (!showTerms) return
-  
+
     const interval = setInterval(() => {
       setTermsTimeLeft((prev) => {
         if (prev <= 1) {
@@ -193,10 +190,9 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
         return prev - 1
       })
     }, 1000)
-  
+
     return () => clearInterval(interval)
   }, [showTerms])
-  
 
   // Function to format time into MM:SS
   const formatTime = (seconds: number) => {
@@ -207,83 +203,85 @@ export default function QuizClient({ QuizItems }: { QuizItems: QuizItem[] }) {
 
   return (
     <div className="relative  p-4 md:p-6 bg-white shadow-lg rounded-lg flex flex-col md:flex-row">
-  {!emailSubmitted ? (
-  !showTerms ? (
-        <div className="w-full text-center">
-          <h2 className="text-2xl text-black font-bold mb-4">Enter Your Gmail</h2>
-          <input
-            type="email"
-            placeholder="Enter your Gmail"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="p-2 text-black border rounded-lg w-full max-w-md mx-auto mb-2"
-          />
-
-          <input
-            type="text"
-            placeholder="Enter your Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="p-2 text-black border rounded-lg w-full max-w-md mx-auto mb-2"
-          />
-
-          <div className="flex items-center justify-center max-w-md mx-auto mb-2">
-            <span className="p-2 bg-gray-200 text-black border border-r-0 rounded-l-lg">+91</span>
+      {!emailSubmitted ? (
+        !showTerms ? (
+          <div className="w-full text-center">
+            <h2 className="text-2xl text-black font-bold mb-4">Enter Your Gmail</h2>
             <input
-              type="tel"
-              pattern="[0-9]{10}"
-              maxLength={10}
-              placeholder="Enter your Mobile Number"
-              value={pnumber}
-              onChange={(e) => {
-                const input = e.target.value.replace(/\D/g, '') // Remove non-digit characters
-                if (input.length <= 10) {
-                  setPnumber(input)
-                }
-              }}
-              className="p-2 text-black border border-l-0 rounded-r-lg w-full"
-              required
+              type="email"
+              placeholder="Enter your Gmail"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="p-2 text-black border rounded-lg w-full max-w-md mx-auto mb-2"
             />
+
+            <input
+              type="text"
+              placeholder="Enter your Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="p-2 text-black border rounded-lg w-full max-w-md mx-auto mb-2"
+            />
+
+            <div className="flex items-center justify-center max-w-md mx-auto mb-2">
+              <span className="p-2 bg-gray-200 text-black border border-r-0 rounded-l-lg">+91</span>
+              <input
+                type="tel"
+                pattern="[0-9]{10}"
+                maxLength={10}
+                placeholder="Enter your Mobile Number"
+                value={pnumber}
+                onChange={(e) => {
+                  const input = e.target.value.replace(/\D/g, '') // Remove non-digit characters
+                  if (input.length <= 10) {
+                    setPnumber(input)
+                  }
+                }}
+                className="p-2 text-black border border-l-0 rounded-r-lg w-full"
+                required
+              />
+            </div>
+
+            {error && <p className="text-red-500 mb-2">{error}</p>}
+            <button
+              onClick={handleSubmit}
+              className="px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg w-full max-w-md mx-auto"
+            >
+              Submit Email
+            </button>
           </div>
+        ) : (
+          // Terms and Conditions Page
+          <div className="w-full text-center">
+            <h2 className="text-2xl font-bold mb-4 text-black">Quiz Terms & Conditions</h2>
+            <p className="mb-4 text-gray-700 max-w-2xl mx-auto">
+              Please read the following terms before starting the quiz:
+            </p>
+            <ul className="text-left text-gray-700 max-w-xl mx-auto list-disc pl-6 space-y-2 mb-6">
+              <li>Quiz duration is limited. You cannot pause the timer.</li>
+              <li>Each question carries the marks as mentioned.</li>
+              <li>Do not refresh or close the browser during the quiz.</li>
+              <li>Your score will be submitted automatically after time ends.</li>
+            </ul>
+            <p className="text-lg font-semibold text-red-600 mb-4">
+              Starting Quiz In: {formatTime(termsTimeLeft)}
+            </p>
+            <button
+              onClick={() => {
+                setEmailSubmitted(true)
+                setTermsTimeLeft(0)
+              }}
+              className="mt-4 px-6 py-2 bg-green-500 text-white font-semibold rounded-lg"
+            >
+              Start Quiz Now
+            </button>
 
-          {error && <p className="text-red-500 mb-2">{error}</p>}
-          <button
-            onClick={handleSubmit}
-            className="px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg w-full max-w-md mx-auto"
-          >
-            Submit Email
-          </button>
-        </div>
-      ) : (
-        // Terms and Conditions Page
-        <div className="w-full text-center">
-          <h2 className="text-2xl font-bold mb-4 text-black">Quiz Terms & Conditions</h2>
-          <p className="mb-4 text-gray-700 max-w-2xl mx-auto">
-            Please read the following terms before starting the quiz:
-          </p>
-          <ul className="text-left text-gray-700 max-w-xl mx-auto list-disc pl-6 space-y-2 mb-6">
-            <li>Quiz duration is limited. You cannot pause the timer.</li>
-            <li>Each question carries the marks as mentioned.</li>
-            <li>Do not refresh or close the browser during the quiz.</li>
-            <li>Your score will be submitted automatically after time ends.</li>
-          </ul>
-          <p className="text-lg font-semibold text-red-600 mb-4">
-            Starting Quiz In: {formatTime(termsTimeLeft)}
-          </p>
-          <button
-  onClick={() => {
-    setEmailSubmitted(true)
-    setTermsTimeLeft(0)
-  }}
-  className="mt-4 px-6 py-2 bg-green-500 text-white font-semibold rounded-lg"
->
-  Start Quiz Now
-</button>
-
-          <p className="text-sm text-gray-500">The quiz will start automatically when the timer ends.</p>
-        </div>
-      )
-    ) : submitted ? (
+            <p className="text-sm text-gray-500">
+              The quiz will start automatically when the timer ends.
+            </p>
+          </div>
+        )
+      ) : submitted ? (
         <div className="w-full text-center">
           <h3 className="text-lg font-bold mt-4">Quiz Submitted!</h3>
         </div>
